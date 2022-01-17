@@ -267,6 +267,11 @@ class Query extends Param
     {
         return $this->setParam('docvalue_fields', $fieldDataFields);
     }
+    
+    public function setFields(array $fields)
+    {
+        return $this->setParam('fields', $fields);
+    }
 
     /**
      * Set script fields.
