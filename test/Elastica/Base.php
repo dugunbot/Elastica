@@ -6,9 +6,9 @@ use Elastica\Client;
 use Elastica\Connection;
 use Elastica\Index;
 use Elasticsearch\Endpoints\Ingest\Pipeline\Put;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Util\Test as TestUtil;
 use Psr\Log\LoggerInterface;
+use Yoast\PHPUnitPolyfills\TestCases\TestCase;
 
 class Base extends TestCase
 {
@@ -127,10 +127,7 @@ class Base extends TestCase
 
         $client = $this->_getClient();
         $index = $client->getIndex('elastica_'.$name);
-
-        if ('elasticsearch' === getenv('ES_HOST')) {
-            $index->create(['index' => ['number_of_shards' => $shards, 'number_of_replicas' => 1]], $delete);
-        }
+        $index->create(['index' => ['number_of_shards' => $shards, 'number_of_replicas' => 1]], $delete);
 
         return $index;
     }
@@ -205,23 +202,23 @@ class Base extends TestCase
         } while (!$allocated);
     }
 
-    protected function setUp()
+    protected function set_up()
     {
-        parent::setUp();
+        parent::set_up();
 
         $hasGroup = $this->_isUnitGroup() || $this->_isFunctionalGroup() || $this->_isBenchmarkGroup();
         $this->assertTrue($hasGroup, 'Every test must have one of "unit", "functional", "benchmark" group');
         $this->showDeprecated();
     }
 
-    protected function tearDown()
+    protected function tear_down()
     {
         if ($this->_isFunctionalGroup()) {
             $this->_getClient()->getIndex('_all')->delete();
             $this->_getClient()->getIndex('_all')->clearCache();
         }
 
-        parent::tearDown();
+        parent::tear_down();
     }
 
     protected function _isUnitGroup()

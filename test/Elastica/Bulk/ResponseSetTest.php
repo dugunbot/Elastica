@@ -10,9 +10,31 @@ use Elastica\Exception\Bulk\Response\ActionException;
 use Elastica\Exception\Bulk\ResponseException;
 use Elastica\Response;
 use Elastica\Test\Base as BaseTest;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertIsType;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertStringContains;
 
 class ResponseSetTest extends BaseTest
 {
+    use AssertIsType;
+    use AssertStringContains;
+
+    /**
+     * @group unit
+     */
+    public function testConstructor()
+    {
+        list($responseData, $actions) = $this->_getFixture();
+
+        $responseSet = $this->_createResponseSet($responseData, $actions);
+
+        $this->assertEquals(200, $responseSet->getStatus());
+        $this->assertEquals(12.3, $responseSet->getQueryTime());
+        $this->assertEquals([
+            'url' => 'http://127.0.0.1:9200/_bulk',
+            'http_code' => 200,
+        ], $responseSet->getTransferInfo());
+    }
+
     /**
      * @group unit
      * @dataProvider isOkDataProvider
@@ -51,12 +73,12 @@ class ResponseSetTest extends BaseTest
 
             $this->assertInstanceOf(ActionException::class, $actionExceptions[0]);
             $this->assertSame($actions[1], $actionExceptions[0]->getAction());
-            $this->assertContains('SomeExceptionMessage', $actionExceptions[0]->getMessage());
+            self::assertStringContainsStringIgnoringCase('SomeExceptionMessage', $actionExceptions[0]->getMessage());
             $this->assertTrue($actionExceptions[0]->getResponse()->hasError());
 
             $this->assertInstanceOf(ActionException::class, $actionExceptions[1]);
             $this->assertSame($actions[2], $actionExceptions[1]->getAction());
-            $this->assertContains('AnotherExceptionMessage', $actionExceptions[1]->getMessage());
+            self::assertStringContainsStringIgnoringCase('AnotherExceptionMessage', $actionExceptions[1]->getMessage());
             $this->assertTrue($actionExceptions[1]->getResponse()->hasError());
         }
     }
@@ -71,13 +93,13 @@ class ResponseSetTest extends BaseTest
         $responseSet = $this->_createResponseSet($responseData, $actions);
 
         $bulkResponses = $responseSet->getBulkResponses();
-        $this->assertInternalType('array', $bulkResponses);
+        self::assertIsArray($bulkResponses);
         $this->assertCount(3, $bulkResponses);
 
         foreach ($bulkResponses as $i => $bulkResponse) {
             $this->assertInstanceOf(Bulk\Response::class, $bulkResponse);
             $bulkResponseData = $bulkResponse->getData();
-            $this->assertInternalType('array', $bulkResponseData);
+            self::assertIsArray($bulkResponseData);
             $this->assertArrayHasKey('_id', $bulkResponseData);
             $this->assertEquals($responseData['items'][$i]['index']['_id'], $bulkResponseData['_id']);
             $this->assertSame($actions[$i], $bulkResponse->getAction());
@@ -99,7 +121,7 @@ class ResponseSetTest extends BaseTest
         foreach ($responseSet as $i => $bulkResponse) {
             $this->assertInstanceOf(Bulk\Response::class, $bulkResponse);
             $bulkResponseData = $bulkResponse->getData();
-            $this->assertInternalType('array', $bulkResponseData);
+            self::assertIsArray($bulkResponseData);
             $this->assertArrayHasKey('_id', $bulkResponseData);
             $this->assertEquals($responseData['items'][$i]['index']['_id'], $bulkResponseData['_id']);
             $this->assertSame($actions[$i], $bulkResponse->getAction());
@@ -128,10 +150,18 @@ class ResponseSetTest extends BaseTest
     {
         $client = $this->createMock(Client::class);
 
+        $response = new Response($responseData, 200);
+        $response->setQueryTime(12.3);
+        $response->setTransferInfo([
+            'url' => 'http://127.0.0.1:9200/_bulk',
+            'http_code' => 200,
+        ]);
+
         $client->expects($this->once())
             ->method('request')
             ->withAnyParameters()
-            ->will($this->returnValue(new Response($responseData)));
+            ->willReturn($response)
+        ;
 
         $bulk = new Bulk($client);
         $bulk->addActions($actions);

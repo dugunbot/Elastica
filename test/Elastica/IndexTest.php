@@ -15,9 +15,12 @@ use Elastica\Test\Base as BaseTest;
 use Elastica\Type;
 use Elastica\Type\Mapping;
 use Elasticsearch\Endpoints\Indices\Analyze;
+use Yoast\PHPUnitPolyfills\Polyfills\AssertIsType;
 
 class IndexTest extends BaseTest
 {
+    use AssertIsType;
+
     /**
      * @group functional
      */
@@ -551,7 +554,7 @@ class IndexTest extends BaseTest
         $index = $this->_createIndex();
         $indexMappings = $index->getMapping();
 
-        $this->assertEmpty($indexMappings['elastica_test']);
+        $this->assertEmpty($indexMappings);
     }
 
     /**
@@ -805,7 +808,7 @@ class IndexTest extends BaseTest
         $index = $client->getIndex(1);
 
         $this->assertEquals('1', $index->getName());
-        $this->assertInternalType('string', $index->getName());
+        self::assertIsString($index->getName());
     }
 
     /**
